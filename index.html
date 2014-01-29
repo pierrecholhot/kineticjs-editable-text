@@ -1,175 +1,79 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-	<head>
-		<style>
-			#pasteModalArea {
-				position:absolute; 
-				width:0; 
-				height:0; 
-				top:-20px; 
-				left:-20px;
-			}
-		</style>
-	</head>
-	<body>
-		<div id="container"></div>
-		<textarea rows="10" cols="60" id="pasteModalArea"></textarea>
 
-		<script src="js/jquery.min.js"></script>
-		<script src="js/kinetic-v4.3.3.js"></script>
-		<script src="js/kinetic.editable.js"></script>
-		<script>
-			// stage init
-			var stage = new Kinetic.Stage({
-				container: 'container',
-				width: 600,
-				height: 400
-			});
-			var layer = new Kinetic.Layer();
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Kineticjs-editable-text : A plug in to KineticJS library, enabling text creation and edit directly on canvas." />
 
-			// stage-canvas 'border'
-			var rect = new Kinetic.Rect({
-				x: 0,
-				y: 0,
-				width: 600,
-				height: 400,
-				stroke: 'black',
-				strokeWidth: 4
-			});
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-			// EditableText parameters
-			var focusRectW=100;
-			var focusRectH=30;
-			// **IMPORTANT** focusedText variable must be accessible to kinetic.editable.js
-			// for Ctrl+Enter to work (unfocus). Ensure its a global variable.
-			// TODO remove this requirement.
-			var focusedText; 
+    <title>Kineticjs-editable-text</title>
+  </head>
 
-			var cancelTextMouseUp=false;
-			var canvas = stage.getContent().firstChild;
+  <body>
 
-			// cursor style
-			$(document).on('mouseover', 'canvas', function(e) {
-				document.body.style.cursor = 'text';
-			});
-			$(document).on('mouseout', 'canvas', function(e) {
-				document.body.style.cursor = 'default';
-			});
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/pcholhot/kineticjs-editable-text">View on GitHub</a>
 
-			// when clicked outside canvas
-			$(document).on('mousedown', function(e) {
-				if (focusedText != undefined) {
-					focusedText.unfocus(e);
-					focusedText = undefined;
-				}
-			});
+          <h1 id="project_title">Kineticjs-editable-text</h1>
+          <h2 id="project_tagline">A plug in to KineticJS library, enabling text creation and edit directly on canvas.</h2>
 
-			// when clicked inside canvas
-			$(document).on('mousedown', 'canvas', function(e) {
-				// if focusedText exists, two possibilities:
-				// Either just clicked on an existing text, or
-				// Clicked outside a focused text.
-				if (focusedText != undefined) {
-					// check if you just clicked a text and dont re-create a new text (cancelTextMouseUp)
-					// also do not unfocus.
-					if (focusedText.checkClick()) {
-						focusedText.findCursorPosFromClick(true);
-						cancelTextMouseUp=true;
-						return false;
-					}
-					else {
-						cancelTextMouseUp=false;
-					}
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/pcholhot/kineticjs-editable-text/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/pcholhot/kineticjs-editable-text/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
 
-					// If haven't clicked on the focused text, unfocus.
-					focusedText.unfocus(e);
-				}
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>
+<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
 
-				return false;
-			});
+<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
 
-			// Mouse up handler. Only inside canvas.
-			$(document).on('mouseup' , 'canvas', function(e) {
-				// return if you just clicked on existing text.
-				if (cancelTextMouseUp) return;
+<pre><code>$ cd your_repo_root/repo_name
+$ git fetch origin
+$ git checkout gh-pages
+</code></pre>
 
-				// nullify focusedText and do nothing, when just unfocused.
-				// If this doesn't exist, every click will create a new TextBox.
-				if (focusedText!=undefined) {
-					focusedText=undefined;
-					return;
-				}
+<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
 
-				// Create new EditableText.
-				var newText = new Kinetic.EditableText({
-					// find click position.
-					x: e.pageX + getFullOffset().left + 5,
-					y: e.pageY + getFullOffset().top - 5,
-					text: '',
-					// *** following params can be modified, or left blank (defaults are in kinetic.editable.js)
-					//lineHeight: 1.3,
-					//fontSize: 16,
-					//focusRectColor: "black",
-					fontFamily: 'Courier',
-					fill: '#000000',
-					// ***
-					// ALWAYS provide the focus layer and stage. pasteModal id to support ctrl+v paste.
-					focusLayer: layer,
-					stage: stage,
-					pasteModal: "pasteModalArea",
-					// *****
-					// modify hit function to detect clicks
-					drawHitFunc: function(canvas) {
-						var context = canvas.getContext(),
-							width = focusRectW, 
-							height = focusRectH;
-							
-						if (this.tempText != undefined) {
-							var linesCount = this.tempText.length;
-							
-							context.beginPath();
-							context.rect(0, 0, this.maxWidth + 10, linesCount*height);
-							context.closePath();
-							canvas.fillStroke(this);
-						}
-						else {
-							context.beginPath();
-							context.rect(0, 0, width, height);
-							context.closePath();
-							canvas.fillStroke(this);
-						}
-					}
-				});
-	
-				// add newly created text in layer and focus it.
-				layer.add(newText);
-				newText.focus();
-				focusedText = newText;
-				layer.draw();
+<h3>
+<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
 
-				// click listener for created text.
-				newText.on("click", function(evt) {
-					evt.cancelBubble = true;
-					this.focus();
-					self.focusedText = this;
-					return false;
-				});
+<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
 
-			});
+<h3>
+<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
 
-			// add the shape to the layer
-			layer.add(rect);
-			// add the layer to the stage
-			stage.add(layer);
+<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
 
-			// helper function for mouse click position.
-			function getFullOffset()
-			{
-				return {
-					left: $("#container").scrollLeft() - $("#container").offset().left,
-					top: $("#container").scrollTop() - $("#container").offset().top,
-				}
-			}
-		</script>
-	</body>
+<h3>
+<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+
+<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+
+<h3>
+<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+
+<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Kineticjs-editable-text maintained by <a href="https://github.com/pcholhot">pcholhot</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
 </html>
